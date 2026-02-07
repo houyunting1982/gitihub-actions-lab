@@ -31,14 +31,14 @@ jobs:
             if (!todos) return;
 
             const body = `
-⚠️ **TODO / FIXME detected in this PR**
+              ⚠️ **TODO / FIXME detected in this PR**
 
-Please review and resolve before merging:
+              Please review and resolve before merging:
 
-\`\`\`
-${todos}
-\`\`\`
-`;
+              \`\`\`
+              ${todos}
+              \`\`\`
+              `;
 
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
