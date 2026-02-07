@@ -1,4 +1,4 @@
-﻿namespace WebApi.Tests;
+namespace WebApi.Tests;
 
 public class UnitTest1
 {

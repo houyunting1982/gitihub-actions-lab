@@ -1,0 +1,20 @@
+# Normalize line endings
+* text=auto eol=lf
+
+# Treat common text formats as text
+*.cs text
+*.csproj text diff=xml
+*.sln text
+*.json text
+*.yml text
+*.yaml text
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+
+# Lock files (generated, avoid conflicts)
+*.lock merge=ours
