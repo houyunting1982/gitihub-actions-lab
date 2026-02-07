@@ -5,6 +5,7 @@ on:
 
 jobs:
   todo-comment:
+    name: forbid-todo-comment
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
