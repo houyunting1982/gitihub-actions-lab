@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "e8YQh4eCOWc=",
+  "success": true,
+  "projectFilePath": "/Users/yuntinghou/local/gha-playground/github-actions-lab/src/WebApi/WebApi.csproj",
+  "expectedPackageFiles": [
+    "/Users/yuntinghou/.nuget/packages/microsoft.aspnetcore.openapi/10.0.0/microsoft.aspnetcore.openapi.10.0.0.nupkg.sha512",
+    "/Users/yuntinghou/.nuget/packages/microsoft.openapi/2.0.0/microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
