@@ -63,6 +63,11 @@ jobs:
 
       - name: Comment coverage on PR
         uses: actions/github-script@v7
+        env:
+          LINE_WARN_THRESHOLD: ${{ vars.LINE_WARN_THRESHOLD }}
+          LINE_FAIL_THRESHOLD: ${{ vars.LINE_FAIL_THRESHOLD }}
+          BRANCH_WARN_THRESHOLD: ${{ vars.BRANCH_WARN_THRESHOLD }}
+          BRANCH_FAIL_THRESHOLD: ${{ vars.BRANCH_FAIL_THRESHOLD }}
         with:
           script: |
             const marker = '<!-- COVERAGE-COMMENT -->';
