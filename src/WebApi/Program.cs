@@ -35,7 +35,6 @@ app.MapGet("/weatherforecast", () =>
 
 app.Run();
 
-// TODO: Add a new endpoint to get the weather forecast for a given city
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
