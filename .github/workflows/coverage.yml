@@ -129,7 +129,7 @@ jobs:
             core.setOutput('should_fail', lineStatus.fail || branchStatus.fail);
 
       - name: Fail if coverage below threshold
-        if: steps.comment.outputs.should_fail == 'true'
+        if: steps.comment.outputs.should_fail == true
         run: |
           echo "Coverage below threshold"
           exit 1
