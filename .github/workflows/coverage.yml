@@ -52,26 +52,11 @@ jobs:
           LINE=$(echo "${{ steps.coverage.outputs.line }} * 100" | bc -l)
           BRANCH=$(echo "${{ steps.coverage.outputs.branch }} * 100" | bc -l)
 
-          echo "Line coverage: $LINE"
-          echo "Branch coverage: $BRANCH"
+          LINE_FMT=$(printf "%.2f" "$LINE")
+          BRANCH_FMT=$(printf "%.2f" "$BRANCH")
 
-          const lineWarn = Number(process.env.LINE_WARN_THRESHOLD);
-          const lineFail = Number(process.env.LINE_FAIL_THRESHOLD);
-          const branchWarn = Number(process.env.BRANCH_WARN_THRESHOLD);
-          const branchFail = Number(process.env.BRANCH_FAIL_THRESHOLD);
-
-          function getStatus(value, warn, fail) {
-            if (value < warn) return { label: '❌ Fail', fail: true };
-            if (value < fail) return { label: '⚠️ Warn', fail: false };
-            return { label: '✅ Pass', fail: false };
-          }
-
-          const lineStatus = getStatus(line, lineWarn, lineFail);
-          const branchStatus = getStatus(branch, branchWarn, branchFail);
-          echo "line_value=$(printf "%.2f" $LINE)" >> $GITHUB_OUTPUT
-          echo "branch_value=$(printf "%.2f" $BRANCH)" >> $GITHUB_OUTPUT
-          echo "line_status=$line_status" >> $GITHUB_OUTPUT
-          echo "branch_status=$branch_status" >> $GITHUB_OUTPUT
+          echo "line=$LINE_FMT" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH_FMT" >> $GITHUB_OUTPUT
 
       - name: Comment coverage on PR
         uses: actions/github-script@v7
@@ -79,8 +64,22 @@ jobs:
           script: |
             const marker = '<!-- COVERAGE-COMMENT -->';
 
-            const line = (Number('${{ steps.coverage.outputs.line }}') * 100).toFixed(2);
-            const branch = (Number('${{ steps.coverage.outputs.branch }}') * 100).toFixed(2);
+            const line = Number('${{ steps.eval.outputs.line }}');
+            const branch = Number('${{ steps.eval.outputs.branch }}');
+
+            const lineWarn = Number(process.env.LINE_WARN_THRESHOLD);
+            const lineFail = Number(process.env.LINE_FAIL_THRESHOLD);
+            const branchWarn = Number(process.env.BRANCH_WARN_THRESHOLD);
+            const branchFail = Number(process.env.BRANCH_FAIL_THRESHOLD);
+
+            function getStatus(value, warn, fail) {
+              if (value < fail) return { label: '🔴 Fail', fail: true };
+              if (value < warn) return { label: '🟡 Warn', fail: false };
+              return { label: '🟢 Pass', fail: false };
+            }
+
+            const lineStatus = getStatus(line, lineWarn, lineFail);
+            const branchStatus = getStatus(branch, branchWarn, branchFail);
 
             const body = `
             ${marker}
@@ -120,9 +119,7 @@ jobs:
                 body,
               });
             }
-      - name: Enforce coverage threshold
-        run: |
-          if [[ "${{ steps.eval.outputs.line_status }}" == "🔴 Fail" || "${{ steps.eval.outputs.branch_status }}" == "🔴 Fail" ]]; then
-            echo "❌ Coverage below threshold"
-            exit 1
-          fi
+            
+            if (lineStatus.fail || branchStatus.fail) {
+              core.setFailed('Coverage below threshold');
+            }
