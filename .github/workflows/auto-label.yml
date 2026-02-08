@@ -1,0 +1,57 @@
+name: Auto Label PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label PR based on changed files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.issue.number;
+
+            // 1️⃣ 获取 PR 改动文件
+            const files = await github.paginate(
+              github.rest.pulls.listFiles,
+              { owner, repo, pull_number }
+            );
+
+            const filenames = files.map(f => f.filename);
+
+            console.log('Changed files:', filenames);
+
+            // 2️⃣ 规则判断
+            const labels = new Set();
+
+            if (filenames.some(f => f.startsWith('src/WebApi/'))) {
+              labels.add('feature');
+            }
+
+            if (filenames.some(f => f.startsWith('test/') || f.includes('.Tests'))) {
+              labels.add('test');
+            }
+
+            if (labels.size === 0) {
+              console.log('No matching labels.');
+              return;
+            }
+
+            // 3️⃣ 添加 labels（自动去重）
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: pull_number,
+              labels: Array.from(labels),
+            });
+
+            console.log('Applied labels:', Array.from(labels));
