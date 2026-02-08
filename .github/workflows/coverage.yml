@@ -68,7 +68,9 @@ jobs:
 
           const lineStatus = getStatus(line, lineWarn, lineFail);
           const branchStatus = getStatus(branch, branchWarn, branchFail);
-
+          if (lineStatus.fail || branchStatus.fail) {
+            core.setFailed('Coverage threshold not met');
+          }
           echo "line_value=$(printf "%.2f" $LINE)" >> $GITHUB_OUTPUT
           echo "branch_value=$(printf "%.2f" $BRANCH)" >> $GITHUB_OUTPUT
           echo "line_status=$line_status" >> $GITHUB_OUTPUT
@@ -123,9 +125,6 @@ jobs:
             }
       - name: Enforce coverage threshold
         run: |
-          if (lineStatus.fail || branchStatus.fail) {
-            core.setFailed('Coverage threshold not met');
-          }
           if [[ "${{ steps.eval.outputs.line_status }}" == "🔴 Fail" || "${{ steps.eval.outputs.branch_status }}" == "🔴 Fail" ]]; then
             echo "❌ Coverage below threshold"
             exit 1
