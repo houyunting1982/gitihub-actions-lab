@@ -10,11 +10,7 @@ permissions:
 jobs:
   coverage:
     runs-on: ubuntu-latest
-    env:
-      LINE_WARN_THRESHOLD: 5
-      LINE_FAIL_THRESHOLD: 1
-      BRANCH_WARN_THRESHOLD: 8
-      BRANCH_FAIL_THRESHOLD: 3
+    environment: coverage 
     steps:
       - uses: actions/checkout@v4
 
