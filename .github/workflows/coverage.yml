@@ -6,11 +6,13 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  
+
 jobs:
   coverage:
     runs-on: ubuntu-latest
-
+    env:
+      LINE_THRESHOLD: 5
+      BRANCH_THRESHOLD: 4
     steps:
       - uses: actions/checkout@v4
 
@@ -42,6 +44,35 @@ jobs:
           echo "line=$LINE" >> $GITHUB_OUTPUT
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
+      - name: Evaluate coverage
+        id: eval
+        run: |
+          LINE=$(echo "${{ steps.coverage.outputs.line }} * 100" | bc -l)
+          BRANCH=$(echo "${{ steps.coverage.outputs.branch }} * 100" | bc -l)
+
+          echo "Line coverage: $LINE"
+          echo "Branch coverage: $BRANCH"
+
+          line_status="🟢 Pass"
+          branch_status="🟢 Pass"
+
+          if (( $(echo "$LINE < $LINE_THRESHOLD" | bc -l) )); then
+            line_status="🔴 Fail"
+          elif (( $(echo "$LINE < $LINE_THRESHOLD + 10" | bc -l) )); then
+            line_status="🟡 Warn"
+          fi
+
+          if (( $(echo "$BRANCH < $BRANCH_THRESHOLD" | bc -l) )); then
+            branch_status="🔴 Fail"
+          elif (( $(echo "$BRANCH < $BRANCH_THRESHOLD + 10" | bc -l) )); then
+            branch_status="🟡 Warn"
+          fi
+
+          echo "line_value=$(printf "%.2f" $LINE)" >> $GITHUB_OUTPUT
+          echo "branch_value=$(printf "%.2f" $BRANCH)" >> $GITHUB_OUTPUT
+          echo "line_status=$line_status" >> $GITHUB_OUTPUT
+          echo "branch_status=$branch_status" >> $GITHUB_OUTPUT
+
       - name: Comment coverage on PR
         uses: actions/github-script@v7
         with:
@@ -55,10 +86,10 @@ jobs:
             ${marker}
             ### 🧪 Test Coverage
 
-            | Type   | Coverage |
-            |--------|----------|
-            | Line   | ${line}% |
-            | Branch | ${branch}% |
+            | Type   | Coverage | Status |
+            |--------|----------|--------|
+            | Line   | ${{ steps.eval.outputs.line_value }}% | ${{ steps.eval.outputs.line_status }} |
+            | Branch | ${{ steps.eval.outputs.branch_value }}% | ${{ steps.eval.outputs.branch_status }} |
             `;
 
             const { owner, repo } = context.repo;
@@ -89,3 +120,9 @@ jobs:
                 body,
               });
             }
+      - name: Enforce coverage threshold
+        run: |
+          if [[ "${{ steps.eval.outputs.line_status }}" == "🔴 Fail" || "${{ steps.eval.outputs.branch_status }}" == "🔴 Fail" ]]; then
+            echo "❌ Coverage below threshold"
+            exit 1
+          fi
