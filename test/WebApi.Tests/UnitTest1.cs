@@ -7,4 +7,11 @@ public class UnitTest1
     {
 
     }
+
+    [Fact]
+    public void Touch_WebApi()
+    {
+        var programType = typeof(Program);
+        Assert.NotNull(programType);
+    }
 }
