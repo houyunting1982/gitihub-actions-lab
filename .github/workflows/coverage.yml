@@ -114,7 +114,10 @@ jobs:
                 body,
               });
             }
+            core.setOutput('should_fail', lineStatus.fail || branchStatus.fail);
 
-            if (lineStatus.fail || branchStatus.fail) {
-              core.setFailed('Coverage below threshold');
-            }
+      - name: Fail if coverage below threshold
+        if: steps.comment.outputs.should_fail == 'true'
+        run: |
+          echo "Coverage below threshold"
+          exit 1
