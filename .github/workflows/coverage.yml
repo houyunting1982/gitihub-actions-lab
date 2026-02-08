@@ -63,7 +63,6 @@ jobs:
         with:
           script: |
             const marker = '<!-- COVERAGE-COMMENT -->';
-
             const line = Number('${{ steps.eval.outputs.line }}');
             const branch = Number('${{ steps.eval.outputs.branch }}');
 
@@ -119,7 +118,7 @@ jobs:
                 body,
               });
             }
-            
+
             if (lineStatus.fail || branchStatus.fail) {
               core.setFailed('Coverage below threshold');
             }
