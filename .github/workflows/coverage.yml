@@ -10,7 +10,7 @@ permissions:
 jobs:
   coverage:
     runs-on: ubuntu-latest
-    environment: coverage 
+    environment: Coverage 
     steps:
       - uses: actions/checkout@v4
 
