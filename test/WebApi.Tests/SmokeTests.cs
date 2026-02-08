@@ -1,8 +1,7 @@
-
-using System;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace WebApi.Tests;
+
 public class SmokeTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
