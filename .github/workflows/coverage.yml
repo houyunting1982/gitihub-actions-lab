@@ -27,8 +27,13 @@ jobs:
       - name: Read coverage
         id: coverage
         run: |
-          LINE=$(xmllint --xpath "string(//coverage/@line-rate)" coverage/coverage.cobertura.xml)
-          BRANCH=$(xmllint --xpath "string(//coverage/@branch-rate)" coverage/coverage.cobertura.xml)
+          FILE=test/WebApi.Tests/coverage/coverage.cobertura.xml
+
+          echo "Using coverage file: $FILE"
+          ls -l $FILE
+
+          LINE=$(xmllint --xpath "string(//coverage/@line-rate)" $FILE)
+          BRANCH=$(xmllint --xpath "string(//coverage/@branch-rate)" $FILE)
 
           echo "line=$LINE" >> $GITHUB_OUTPUT
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
