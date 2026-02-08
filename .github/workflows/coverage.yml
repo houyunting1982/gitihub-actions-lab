@@ -27,10 +27,10 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "LINE_WARN_THRESHOLD=$LINE_WARN_THRESHOLD"
-          echo "LINE_FAIL_THRESHOLD=$LINE_FAIL_THRESHOLD"
-          echo "BRANCH_WARN_THRESHOLD=$BRANCH_WARN_THRESHOLD"
-          echo "BRANCH_FAIL_THRESHOLD=$BRANCH_FAIL_THRESHOLD"
+          echo "LINE_WARN_THRESHOLD=${{ vars.LINE_WARN_THRESHOLD }}"
+          echo "LINE_FAIL_THRESHOLD=${{ vars.LINE_FAIL_THRESHOLD }}"
+          echo "BRANCH_WARN_THRESHOLD=${{ vars.BRANCH_WARN_THRESHOLD }}"
+          echo "BRANCH_FAIL_THRESHOLD=${{ vars.BRANCH_FAIL_THRESHOLD }}"
 
       - name: Install xmllint
         run: sudo apt-get update && sudo apt-get install -y libxml2-utils
