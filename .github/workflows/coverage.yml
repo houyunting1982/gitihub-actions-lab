@@ -1,0 +1,140 @@
+name: Test Coverage
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    environment: Coverage 
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Run tests with coverage
+        run: |
+          dotnet test \
+            /p:CollectCoverage=true \
+            /p:CoverletOutputFormat=cobertura \
+            /p:CoverletOutput=coverage/
+
+      - name: Set environment variables
+        run: |
+          echo "LINE_WARN_THRESHOLD=${{ vars.LINE_WARN_THRESHOLD }}"
+          echo "LINE_FAIL_THRESHOLD=${{ vars.LINE_FAIL_THRESHOLD }}"
+          echo "BRANCH_WARN_THRESHOLD=${{ vars.BRANCH_WARN_THRESHOLD }}"
+          echo "BRANCH_FAIL_THRESHOLD=${{ vars.BRANCH_FAIL_THRESHOLD }}"
+
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+
+      - name: Read coverage
+        id: coverage
+        run: |
+          FILE=test/WebApi.Tests/coverage/coverage.cobertura.xml
+
+          echo "Using coverage file: $FILE"
+          ls -l $FILE
+
+          LINE=$(xmllint --xpath "string(//coverage/@line-rate)" $FILE)
+          BRANCH=$(xmllint --xpath "string(//coverage/@branch-rate)" $FILE)
+
+          echo "line=$LINE" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Evaluate coverage
+        id: eval
+        run: |
+          LINE=$(echo "${{ steps.coverage.outputs.line }} * 100" | bc -l)
+          BRANCH=$(echo "${{ steps.coverage.outputs.branch }} * 100" | bc -l)
+
+          LINE_FMT=$(printf "%.2f" "$LINE")
+          BRANCH_FMT=$(printf "%.2f" "$BRANCH")
+
+          echo "line=$LINE_FMT" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH_FMT" >> $GITHUB_OUTPUT
+
+      - name: Comment coverage on PR
+        id: comment
+        uses: actions/github-script@v7
+        env:
+          LINE_WARN_THRESHOLD: ${{ vars.LINE_WARN_THRESHOLD }}
+          LINE_FAIL_THRESHOLD: ${{ vars.LINE_FAIL_THRESHOLD }}
+          BRANCH_WARN_THRESHOLD: ${{ vars.BRANCH_WARN_THRESHOLD }}
+          BRANCH_FAIL_THRESHOLD: ${{ vars.BRANCH_FAIL_THRESHOLD }}
+        with:
+          script: |
+            const marker = '<!-- COVERAGE-COMMENT -->';
+            const line = Number('${{ steps.eval.outputs.line }}');
+            const branch = Number('${{ steps.eval.outputs.branch }}');
+
+            const lineWarn = Number(process.env.LINE_WARN_THRESHOLD);
+            const lineFail = Number(process.env.LINE_FAIL_THRESHOLD);
+            const branchWarn = Number(process.env.BRANCH_WARN_THRESHOLD);
+            const branchFail = Number(process.env.BRANCH_FAIL_THRESHOLD);
+
+            function getStatus(value, warn, fail) {
+              if (value < fail) return { label: '🔴 Fail', fail: true };
+              if (value < warn) return { label: '🟡 Warn', fail: false };
+              return { label: '🟢 Pass', fail: false };
+            }
+
+            const lineStatus = getStatus(line, lineWarn, lineFail);
+            const branchStatus = getStatus(branch, branchWarn, branchFail);
+
+            const body = `
+            ${marker}
+            ### 🧪 Test Coverage
+
+            | Type   | Coverage | Status |
+            |--------|----------|--------|
+            | Line   | ${line}% | ${lineStatus.label} |
+            | Branch | ${branch}% | ${branchStatus.label} |
+            `;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+
+            const existing = comments.data.find(c =>
+              c.body && c.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+            core.setOutput('should_fail', lineStatus.fail || branchStatus.fail);
+
+      - name: Debug should_fail
+        run: |
+          echo "should_fail = '${{ steps.comment.outputs.should_fail }}'"
+          
+      - name: Fail if coverage below threshold
+        if: steps.comment.outputs.should_fail == 'true'
+        run: |
+          echo "Coverage below threshold"
+          exit 1
