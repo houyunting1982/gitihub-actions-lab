@@ -21,6 +21,9 @@ jobs:
             /p:CoverletOutputFormat=cobertura \
             /p:CoverletOutput=coverage/
 
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+
       - name: Read coverage
         id: coverage
         run: |
